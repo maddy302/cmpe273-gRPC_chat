@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+message informServerOnlineStatus{
+string clientID = 1;
+string status = 2;
+}
+
+message onlineUsers{
+    string clientID = 1;
+}
+
+message Expression{
+ float operand1 = 1;
+ float operand2 = 2;
+ string operator = 3;
+}
+
+
+message checkMessages{
+    string fromClient = 1;
+
+}
+
+message singleMessage{
+    string fromClient = 1;
+    string toClient = 2;
+    string msg = 3;
+}
+
+message sendMessage{
+    string fromClient = 1;
+    string toClient  = 2;
+    string msg = 3;
+    string timestamp = 4;
+}
+
+message restoreMessagesReq{
+    string clientID =1 ;
+}
+
+message restoreMessagesRes{
+    repeated singleMessage msgs = 1;
+}
+
+message sentConfirmation{
+    string clientID = 1;
+    string sentStatus = 2;
+}
+
+message receivedConfirmation{
+    string clientID = 1;
+    string receivedStatus = 2;
+}
+
+message toClient{
+    string toClinetID = 1;
+}
+
+message sendMessageRepeated{
+    repeated string fromClient = 1;
+    repeated string toClient  = 2;
+    repeated string msg = 3;
+    repeated string timestamp = 4;
+}
+
+message groupMessage{
+    string groupID = 1;
+    string fromClient = 2;
+    bytes msg = 3;
+    string timestamp = 4;
+}
+
+message groupMessageRepeated{
+    repeated string groupID     = 1;
+    repeated string fromClient  = 2;
+    repeated bytes msg         = 3;
+    repeated string timestamp   = 4;
+}
+
+message group_list{
+    repeated string clientID = 1;
+}
+
+message group_user{
+    string clientID = 1;
+    string groupID = 2;
+}
+
+message Empty{}
+
+service ExecuteExpression{
+    rpc ExecExp(Expression) returns (Expression){}
+}
+
+
+
+
+
+/*servers stream where it all publishes the messages. Client needs to subscribe to this to be able to receive messages*/
+/* response-streaming RPC */
+service getMessageFromServerStream{
+    rpc getMessageStream(toClient) returns (stream sendMessage);
+    rpc putMessageStream(stream sendMessage) returns (sentConfirmation);
+    rpc restoreMessages(restoreMessagesReq) returns (restoreMessagesRes);
+    rpc getMessage(checkMessages) returns (singleMessage);
+    rpc sendMessageService(sendMessage) returns (sentConfirmation);
+    rpc notifyOnlineStatus(informServerOnlineStatus) returns (informServerOnlineStatus);
+    rpc getOnlineUsers(onlineUsers) returns (stream onlineUsers);
+    rpc getOfflineMessage(toClient) returns (sendMessageRepeated);
+    
+}
+
+service groupChatServicer{
+    rpc notifyOnlineStatus(informServerOnlineStatus) returns (informServerOnlineStatus);
+    rpc getGroupMemebers(group_user) returns (group_list);
+    rpc sendMessageToGroup(groupMessage) returns (sentConfirmation);
+    rpc receiveMessageFromGroup(group_user) returns (stream groupMessage);
+    rpc receiveOfflineMessageFromGroup(group_user) returns (groupMessageRepeated);
+}
+
+/*python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. chatApp.proto*/
